@@ -12,14 +12,22 @@ use rqrr;
 #[command(propagate_version = true)]
 struct Args {
     #[clap(value_hint = ValueHint::FilePath)]
-    #[arg(short, long)]
+    #[arg(short, long, help = "Path to the source QRIS file to copy data from.")]
     source: String,
+
     #[clap(value_hint = ValueHint::FilePath)]
-    #[arg(short, long)]
+    #[arg(short, long, help = "Path to the target QRIS file to overwrite with source data.")]
     target: String,
+
     #[clap(value_hint = ValueHint::DirPath)]
-    #[arg(short, long)]
+    #[arg(short, long, help = "Path to the directory where the output QRIS file will be saved.")]
     output: String,
+
+    #[arg(long, default_value_t = false, help = "Use the target QRIS's frame to create a new QRIS image with the source's information. When enabled, generates a plain QR code with the source's information instead.")]
+    raw: bool,
+
+    #[arg(long, default_value_t = 500, help = "Set the canvas size for the QRIS image in pixels (default: 500).")]
+    size: u32,
 }
 
 fn main() {
@@ -54,17 +62,30 @@ fn main() {
                     nodes.rewrite_crc16();
                     let qr_modified = nodes_target.dumps();
                     let qrcode = QrCode::new(qr_modified).unwrap();
-                    let result = qrcode.render::<Rgb<u8>>().max_dimensions(width, height).quiet_zone(false).build();
-                    let result_img = DynamicImage::ImageRgb8(result).resize(width, height, image::imageops::FilterType::Gaussian);
-                    let start = grid_target[0].bounds[0];
-                    image::imageops::overlay(&mut target, &result_img, start.x.into(), start.y.into());
-                    let save = target.save(&parser.output);
-                    match save {
-                        Ok(_) => {
-                            println!("qr saved as {}", parser.output);
-                        },
-                        Err(e) => {
-                            println!("saving image failure: {}", e);
+                    let result = qrcode.render::<Rgb<u8>>().max_dimensions(if parser.raw{parser.size}else{width}, if parser.raw{parser.size}else{height}).quiet_zone(parser.raw).build();
+                    if parser.raw {
+                        match result.save(&parser.output) {
+                            Ok(_) => {
+                                println!("qr saved as {}", parser.output);
+
+                            },
+                            Err(e)=>{
+                                println!("saving image failure: {}", e);
+
+                            }
+                        }
+                    }else{
+                        let result_img = DynamicImage::ImageRgb8(result).resize(width, height, image::imageops::FilterType::Gaussian);
+                        let start = grid_target[0].bounds[0];
+                        image::imageops::overlay(&mut target, &result_img, start.x.into(), start.y.into());
+                        let save = target.save(&parser.output);
+                        match save {
+                            Ok(_) => {
+                                println!("qr saved as {}", parser.output);
+                            },
+                            Err(e) => {
+                                println!("saving image failure: {}", e);
+                            }
                         }
                     }
                 },
