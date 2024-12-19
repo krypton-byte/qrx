@@ -1,0 +1,11 @@
+[package]
+name = "qrx"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.23", features = ["derive"] }
+image = "0.25.5"
+qrcode = "0.14.1"
+qris = { git = "https://github.com/krypton-byte/qris-rs.git", version = "0.1.2" }
+rqrr = "0.8.0"
