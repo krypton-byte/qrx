@@ -32,7 +32,14 @@ struct Args {
 
 fn main() {
     let parser = Args::parse();
-    let img = image::open(parser.source).unwrap().to_luma8();
+    let img = image::open(parser.source);
+    let img = match img {
+        Ok(r)=>r,
+        Err(e) => {
+            eprintln!("Err: {}", &e);
+            exit(1);
+        }
+    }.to_luma8();
     let mut prepare_img = rqrr::PreparedImage::prepare(img);
     let grids = prepare_img.detect_grids();
     if grids.len() == 0{
@@ -42,7 +49,14 @@ fn main() {
     match grids[0].decode(){
         Ok((_, content))=>{
             let mut nodes = Nodes::from_str(&content).unwrap();
-            let mut target = image::open(parser.target).unwrap();
+            let target = image::open(parser.target);
+            let mut target = match target {
+                Ok(r)=>r,
+                Err(e) => {
+                    eprintln!("Err: {}", &e);
+                    exit(1);
+                }
+            };
             let target_img = target.to_luma8();
             let mut prepare_target_img = rqrr::PreparedImage::prepare(target_img);
             let grid_target = prepare_target_img.detect_grids();
@@ -60,7 +74,7 @@ fn main() {
                     nodes.set_merchant_name(nodes_target.get_merchant_name().unwrap().to_string());
                     nodes.set_postal_code(nodes_target.get_postal_code().unwrap().to_string());
                     nodes.rewrite_crc16();
-                    let qr_modified = nodes_target.dumps();
+                    let qr_modified = nodes.dumps();
                     let qrcode = QrCode::new(qr_modified).unwrap();
                     let result = qrcode.render::<Rgb<u8>>().max_dimensions(if parser.raw{parser.size}else{width}, if parser.raw{parser.size}else{height}).quiet_zone(parser.raw).build();
                     if parser.raw {
