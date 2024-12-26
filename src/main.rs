@@ -42,7 +42,7 @@ fn main() {
     }.to_luma8();
     let mut prepare_img = rqrr::PreparedImage::prepare(img);
     let grids = prepare_img.detect_grids();
-    if grids.len() == 0{
+    if grids.is_empty() {
         eprintln!("QR Object Not Detected");
         exit(1);
     }
@@ -60,7 +60,7 @@ fn main() {
             let target_img = target.to_luma8();
             let mut prepare_target_img = rqrr::PreparedImage::prepare(target_img);
             let grid_target = prepare_target_img.detect_grids();
-            if grid_target.len() == 0 {
+            if grid_target.is_empty() {
                 eprintln!("QR Target Object Not Detected");
                 exit(1);
             }
@@ -76,7 +76,7 @@ fn main() {
                     nodes.rewrite_crc16();
                     let qr_modified = nodes.dumps();
                     let qrcode = QrCode::new(qr_modified).unwrap();
-                    let result = qrcode.render::<Rgb<u8>>().max_dimensions(if parser.raw{parser.size}else{width}, if parser.raw{parser.size}else{height}).quiet_zone(parser.raw).build();
+                    let result = qrcode.render::<Rgb<u8>>().max_dimensions(if parser.raw{parser.size} else{width}, if parser.raw{parser.size}else{height}).quiet_zone(parser.raw).build();
                     if parser.raw {
                         match result.save(&parser.output) {
                             Ok(_) => {
